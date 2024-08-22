@@ -11,6 +11,7 @@
             <v-tab :value="1"> <v-icon icon="mdi-list-box-outline"></v-icon>&nbsp;&nbsp; Editor</v-tab>
             <v-tab :value="2"><v-icon icon="mdi-database"></v-icon>&nbsp;&nbsp;Data</v-tab>
             <v-tab :value="3"><v-icon icon="mdi-book-open"></v-icon>&nbsp;&nbsp;Viewer</v-tab>
+            <v-tab :value="4"><v-icon icon="mdi-cog"></v-icon>&nbsp;&nbsp;Testing</v-tab>
           </v-tabs>
           
           <br>
@@ -20,6 +21,7 @@
             <v-tabs-window-item :key="1" :value="1"> <MainForm/> </v-tabs-window-item>
             <v-tabs-window-item :key="2" :value="2"> <MainData/> </v-tabs-window-item>
             <v-tabs-window-item :key="3" :value="3"> <MainViewer/> </v-tabs-window-item>
+            <v-tabs-window-item :key="4" :value="4"> <TestComp/> </v-tabs-window-item>
           </v-tabs-window>
         </v-card>
       </v-main>
