@@ -93,9 +93,9 @@
           </span>
         </v-col>
     </v-row>
-    <!-- <v-sheet class="pa-4" border rounded elevation="2">
-      <v-btn @click="testy">test</v-btn>
-    </v-sheet> -->
+    <v-sheet class="pa-4" border rounded elevation="2">
+      <v-btn @click="validateNow">test</v-btn>
+    </v-sheet>
   </v-container>
 </template>
 
@@ -106,6 +106,9 @@
   import { toCURIE } from '@/modules/utils';
   import editorMatchers from '@/modules/editors';
   import defaultEditor from '@/components/UnknownEditor.vue';
+  import { useValidation } from '@/composables/validation';
+  import { toRaw } from 'vue';
+  import rdf from 'rdf-ext';
 
 
   // ----- //
@@ -156,6 +159,12 @@
   provide('save_node', save_node)
   provide('editorMatchers', editorMatchers)
   provide('defaultEditor', defaultEditor)
+
+  const { validateForm } = useValidation()
+
+  const shapesDataset = inject('shapesDataset')
+  const graphData = inject('graphData')
+
   
   const shapePrefixes = inject('shapePrefixes')
   const nodeShapes = inject('nodeShapes')
@@ -278,6 +287,20 @@
     } else {
       console.log("Prefix form validation error")
     }
+  }
+ 
+  function validateNow() {
+    console.log(graphData)
+    console.log(toRaw(graphData))
+    console.log(toRaw(graphData).getRawDataset())
+    const newds = rdf.dataset()
+
+    graphData.forEach(quad => {
+      newds.add(quad)
+    });
+
+
+    validateForm(newds, shapesDataset) 
   }
 
 </script>

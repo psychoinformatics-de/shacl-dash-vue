@@ -15,7 +15,7 @@ export function useShapeData(config) {
     // Data //
     // ---- //
 	const defaultURL = new URL("@/assets/shapesgraph.ttl", import.meta.url).href
-	var shapesDataset = reactive(rdf.dataset());
+	var shapesDataset = rdf.dataset();
 	var nodeShapes = ref({});
 	var propertyGroups = ref({});
 	var nodeShapeNamesArray = ref([]);

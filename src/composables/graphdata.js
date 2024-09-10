@@ -80,6 +80,9 @@ export function useGraphData(config) {
     const dataset = rdf.dataset();
     const proxy = new Proxy(dataset, {
       get(target, prop, receiver) {
+        if (prop === 'getRawDataset') {
+          return () => target;  // Return the original rdf.dataset
+        }
         const value = Reflect.get(target, prop, receiver);
         if (typeof value === 'function' && ['add', 'delete'].includes(prop)) {
           return function (...args) {
