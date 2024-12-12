@@ -13,7 +13,7 @@
               <v-tab :value="1"> <v-icon icon="mdi-list-box-outline"></v-icon>&nbsp;&nbsp; Forms</v-tab>
               <v-tab :value="2"><v-icon icon="mdi-database"></v-icon>&nbsp;&nbsp;Data</v-tab>
               <!-- <v-tab :value="3"><v-icon icon="mdi-book-open"></v-icon>&nbsp;&nbsp;Viewer</v-tab> -->
-              <!-- <v-tab :value="4"><v-icon icon="mdi-cog"></v-icon>&nbsp;&nbsp;Testing</v-tab> -->
+              <v-tab :value="4"><v-icon icon="mdi-cog"></v-icon>&nbsp;&nbsp;Testing</v-tab>
             </v-tabs>
             <br>
             <v-tabs-window v-model="tab">
@@ -56,7 +56,7 @@
               <v-tabs-window-item :key="1" :value="1"> <MainForm :ready="page_ready"/> </v-tabs-window-item>
               <v-tabs-window-item :key="2" :value="2"> <MainData/> </v-tabs-window-item>
               <!-- <v-tabs-window-item :key="3" :value="3"> <MainViewer/> </v-tabs-window-item> -->
-              <!-- <v-tabs-window-item :key="4" :value="4"> <TestComp/> </v-tabs-window-item> -->
+              <v-tabs-window-item :key="4" :value="4"> <TestCompFileList/> </v-tabs-window-item>
             </v-tabs-window>
           </v-card>
         </span>
@@ -80,6 +80,7 @@
   import { useFormData } from '@/composables/formdata';
   import editorMatchers from '@/modules/editors';
   import defaultEditor from '@/components/UnknownEditor.vue';
+import TestCompFileList from './components/TestCompFileList.vue';
 
   const { graphData, batchMode, getGraphData, graphPrefixes, serializedGraphData, graphTriples, serializeNodesToTSV, updateSerializedData, triggerReactivity} = useGraphData(config)
   const { classData, getClassData, classPrefixes, serializedClassData, classTriples } = useClassData(config)
