@@ -10,7 +10,6 @@ import {SHACL, RDF} from '@/modules/namespaces';
 import formatsPretty from '@rdfjs/formats/pretty.js'
 import { resolveBlankNode } from '@/modules/utils';
 
-const baseURL = new URL(import.meta.env.BASE_URL || '/', import.meta.url).href;
 const rdfPretty = rdf.clone()
 rdfPretty.formats.import(formatsPretty)
 
