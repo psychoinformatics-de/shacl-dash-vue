@@ -1,0 +1,26 @@
+@prefix dlco: <https://concepts.datalad.org/> .
+@prefix pgui: <https://concepts.datalad.org/s/pgui/unreleased/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+dlco:ThingBasicGroup a sh:PropertyGroup ;
+    rdfs:label "Thing Basic" ;
+    rdfs:comment "Basic properties from the Thing class" ;
+    sh:order 0.0 .
+
+dlco:ThingMixinGroup a sh:PropertyGroup ;
+    rdfs:label "Thing Mixin" ;
+    rdfs:comment "Basic properties from the ThingMixin class" ;
+    sh:order 1.0 .
+
+dlco:ValueSpecificationMixinGroup a sh:PropertyGroup ;
+    rdfs:label "Value Specification Mixin" ;
+    rdfs:comment "Properties from the ValueSpecificationMixin class" ;
+    sh:order 2.0 .
+
+[] a pgui:Container ;
+    pgui:property_groups dlco:ThingBasicGroup,
+        dlco:ThingMixinGroup,
+        dlco:ValueSpecificationMixinGroup .
+

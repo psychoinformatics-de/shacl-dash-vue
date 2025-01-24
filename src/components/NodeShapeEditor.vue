@@ -61,16 +61,19 @@
     // Data //
     // ---- //
 
+    const myShaclVue = inject('myShaclVue')
     const localShapeIri = ref(props.shape_iri);
     const localNodeIdx = ref(props.node_idx);
-    const formData = inject('formData');
-    const defaultPropertyGroup = inject('defaultPropertyGroup');
-    const propertyGroups = inject('propertyGroups');
-    const nodeShapes = inject('nodeShapes')
-    const shape_obj = nodeShapes.value[localShapeIri.value]
-    const ready = ref(false)
-    var tab = ref(null)
+    // const formData = myShaclVue.forms.content
     const config = inject('config')
+    console.log("nodeshapeditor config")
+    console.log(config)
+    const defaultPropertyGroup = config.defaultPropertyGroup
+    
+    const propertyGroups = myShaclVue.shapes.propertyGroups
+    const nodeShapes = myShaclVue.shapes.nodeShapes
+    const shape_obj = nodeShapes.value[localShapeIri.value]
+    var tab = ref(null)
     const group_layout = ref('default') // ref('default') or ref('tabs')
     
     // ----------------- //
@@ -78,13 +81,12 @@
     // ----------------- //
 
     onMounted(() => {
-        ready.value = true;
     })
 
     onBeforeMount(() => {
         // console.log(`the NodeShapeEditor component is about to be mounted.`)
         orderGroups()
-        if (config.value.hasOwnProperty("group_layout") && config.value.group_layout == "tabs") {
+        if (config.hasOwnProperty("group_layout") && config.group_layout == "tabs") {
             group_layout.value = "tabs"
         }
     })
@@ -103,41 +105,20 @@
     // Computed properties //
     // ------------------- //
 
-    const shapeAttributes = computed(() => {
-        const ignore_properties = [
-            "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-            "properties",
-            "http://www.w3.org/ns/shacl#ignoredProperties"
-        ]
-        var new_obj = {}
-        for (const [key, value] of Object.entries(shape_obj)) {
-            if (ignore_properties.indexOf(key) < 0) {
-                new_obj[key] = value
-            }
-        }
-        return new_obj
-    })
+    const ignoredProperties = ref([
+        RDF.type.value,
+        DLTHING.meta_type.value,
+    ]);
 
-    const orderedProperties = computed(() => {
-        var order = SHACL.order.value
-        return shape_obj.properties.sort((a,b) => a[order] - b[order])
-    });
-
-    // const node_idx = computed(() => {
-    //     console.log("Inside computed in nodeshapeeditor. localShapeIri.value:")
-    //     console.log(localShapeIri.value)
-    //     return formData[localShapeIri.value].length - 0
+    // const ignoredProperties = computed(() => {
+    //     var ignored = [
+    //         RDF.type.value,
+    //         DLTHING.meta_type.value,
+    //     ]
+    //     // TODO: need to get actual ignored properties from shape_obj[SHACL.ignoredProperties.value]
+    //     // TODO: also load ignored properties from some user-defined default
+    //     return ignored
     // })
-
-    const ignoredProperties = computed(() => {
-        var ignored = [
-            RDF.type.value,
-            DLTHING.meta_type.value,
-        ]
-        // TODO: need to get actual ignored properties from shape_obj[SHACL.ignoredProperties.value]
-        // TODO: also load ignored properties from some user-defined default
-        return ignored
-    })
 
     const usedPropertyGroups = computed(() => {
         // first get a list of all the sh:PropertyGroup instances 
@@ -167,14 +148,11 @@
                 if (ignoredProperties.value.indexOf(p[SHACL.path]) < 0) {
                     used_prop_groups[defaultPropertyGroup.key]["own_properties"].push(p)
                 } else {
-                    console.log(`Not adding ignored property default group: ${p}`)
+                    console.log(`Not adding ignored property to default group: ${p[SHACL.path]}`)
                 }
             }
         }
-
         return used_prop_groups
-        // var order = SHACL.order.value
-        // return used_prop_groups.sort((a,b) => a[order] - b[order])
     });
 
     // --------- //

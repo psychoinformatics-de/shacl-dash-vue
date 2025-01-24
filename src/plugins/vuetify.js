@@ -16,4 +16,11 @@ export default createVuetify({
   theme: {
     defaultTheme: 'light',
   },
+  defaults: {
+    VDialog: {
+      teleport: true, // Ensure teleport is enabled globally for dialogs
+    },
+  },
 })
+
+

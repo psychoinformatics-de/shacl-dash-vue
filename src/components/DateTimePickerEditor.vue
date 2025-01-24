@@ -45,7 +45,6 @@
         triple_uid: String,
         triple_idx: Number
     })
-    const formData = inject('formData');
     const { rules } = useRules(props.property_shape)
     const inputId = `input-${Date.now()}`;
     const { fieldRef } = useRegisterRef(inputId, props);

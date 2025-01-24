@@ -67,7 +67,6 @@
         triple_uid: String,
         triple_idx: Number
     })
-    const formData = inject('formData');
     const { rules } = useRules(props.property_shape)
     rules.value.push(
       value => {
@@ -80,7 +79,8 @@
     const inputId = `input-${Date.now()}`;
     const { fieldRef } = useRegisterRef(inputId, props);
     
-    const allPrefixes = inject('allPrefixes');
+    const myShaclVue = inject('myShaclVue')
+    const allPrefixes = myShaclVue.prefixes;
     const enterCURIE = ref(false)
 
     const emit = defineEmits(['update:modelValue']);

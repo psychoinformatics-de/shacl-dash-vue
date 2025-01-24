@@ -10,6 +10,7 @@
         item-value="value"
         item-text="title"
         return-object
+        @click="handleDropdownClick()"
         ref="fieldRef"
         :id="inputId"
     >
@@ -39,10 +40,8 @@
                 <v-list-item @click="selectItem(data.item)">
                     <div style="display: flex;">
                         <div>
-                            <v-list-item-content>
-                                <v-list-item-title>{{ data.item.title }}</v-list-item-title>
-                                <v-list-item-subtitle>{{ data.item.props.subtitle }}</v-list-item-subtitle>
-                            </v-list-item-content>
+                            <v-list-item-title>{{ data.item.title }}</v-list-item-title>
+                            <v-list-item-subtitle>{{ data.item.props.subtitle }}</v-list-item-subtitle>
                         </div>
                         <div style="margin-left: auto;">
                             <v-tooltip location="end" min-width="480px">
@@ -72,10 +71,10 @@
         </template>
     </v-autocomplete>
 
-    <v-dialog v-model="dialog" max-width="700">
-        <template v-slot:default="{ isActive }">
-            <FormEditor :key="selectedShapeIRI" :shape_iri="selectedShapeIRI" :node_idx="newNodeIdx"></FormEditor>
-        </template>
+    <v-dialog v-model="dialog" max-width="700" scrollable teleport>
+        <span v-if="selectedShapeIRI && newNodeIdx">
+            <FormEditor :key="selectedShapeIRI + '-' + newNodeIdx" :shape_iri="selectedShapeIRI" :node_idx="newNodeIdx"></FormEditor>
+        </span>
     </v-dialog>
 
 
@@ -83,11 +82,11 @@
 </template>
 
 <script setup>
-    import { inject, watch, onBeforeMount, ref, provide, computed} from 'vue'
+    import { inject, watch, onBeforeMount, ref, provide, computed, nextTick} from 'vue'
     import { useRules } from '../composables/rules'
     import rdf from 'rdf-ext'
     import {SHACL, RDF, RDFS, DLTHING, XSD} from '@/modules/namespaces'
-    import { toCURIE, getLiteralAndNamedNodes, getSubjectTriples} from '../modules/utils';
+    import { toCURIE } from '../modules/utils';
     import { useRegisterRef } from '../composables/refregister';
 
     // ----- //
@@ -95,6 +94,7 @@
     // ----- //
 
     const props = defineProps({
+        modelValue: String,
         property_shape: Object,
         node_uid: String,
         node_idx: String,
@@ -107,11 +107,11 @@
     // ---- //
     const localNodeUid = ref(props.node_uid)
     const newNodeIdx = ref(null)
-    const formData = inject('formData');
-    const graphData = inject('graphData');
-    const add_empty_node = inject('add_empty_node');
-    const allPrefixes = inject('allPrefixes');
-    const classData = inject('classData');
+    const myShaclVue = inject('myShaclVue')
+    const formData = myShaclVue.forms.content;
+    const graphData = myShaclVue.data.graph;
+    const allPrefixes = myShaclVue.prefixes;
+    const classData = myShaclVue.classes.graph;
     const { rules } = useRules(props.property_shape)
     var propClass = ref(null)
     const inputId = `input-${Date.now()}`;
@@ -123,13 +123,13 @@
     const instanceItems = ref([])
 
     const cancelDialogForm = () => {
-        // console.log("Canceling from form in dialog")
+        console.log("Canceling from form in dialog")
         dialog.value = false;
         newNodeIdx.value = null
     };
     provide('cancelFormHandler', cancelDialogForm);
     const saveDialogForm = () => {
-        // console.log("Saving from form in dialog")
+        console.log("Saving from form in dialog")
         dialog.value = false;
         newNodeIdx.value = null
     };
@@ -152,22 +152,28 @@
     // Lifecycle methods //
     // ----------------- //
 
-    onBeforeMount(() => {
-        // TODO: what should the correct default value be here?
-        propClass.value = props.property_shape[SHACL.class.value] ?? false
-        getInstanceItems()
-    })
+    // onBeforeMount(() => {
+    //     // TODO: what should the correct default value be here?
+    //     propClass.value = props.property_shape[SHACL.class.value] ?? false
+
+    //     // console.log("---\nBeforemount instanceselecteditor\n---")
+    //     // console.log(`propClass.value: ${propClass.value}`)
+    //     getInstanceItems()
+    // })
 
     function getInstanceItems() {
         // ---
         // The goal of this method is to populate the list of items for the
         // InstancesSelectEditor
         // ---
-        // console.log("(Re)calculating instance items")
+
+        if (!propClass.value) { 
+            propClass.value = props.property_shape[SHACL.class.value] ?? false
+        }
+        console.log("CHECK --- (Re)calculating instance items")
         // find nodes with predicate rdf:type and object being the property class
         // console.log("find nodes with predicate rdf:type and object being the property class:")
-        var quads = getLiteralAndNamedNodes(
-            graphData,
+        var quads = myShaclVue.data.getLiteralAndNamedNodes(
             rdf.namedNode(RDF.type),
             propClass.value,
             allPrefixes
@@ -186,7 +192,7 @@
             const cl = quad.subject.value
             // console.log(`\t - getting quads with class: ${cl}`)
             // console.log(`\t - (size of data graph: ${graphData.size})`)
-            myArr = myArr.concat(getLiteralAndNamedNodes(graphData, rdf.namedNode(RDF.type), cl, allPrefixes))
+            myArr = myArr.concat(myShaclVue.data.getLiteralAndNamedNodes(rdf.namedNode(RDF.type), cl, allPrefixes))
         });
         // Then combine all quad arrays
         // const combinedQuads = quads.concat(savedQuads).concat(myArr);
@@ -204,7 +210,7 @@
             if (quad.subject.termType === 'BlankNode') {
                 extra = ' (BlankNode)'
             }
-            var relatedTrips = getSubjectTriples(graphData, quad.subject)
+            var relatedTrips = myShaclVue.data.getSubjectTriples(quad.subject)
             var item = {
                 title: quad.subject.value + extra,
                 value: quad.subject.value,
@@ -219,7 +225,7 @@
     }
 
     watch(graphData, () => {
-        // console.log("CHECK: graphdata instanceselecteditor")
+        console.log("CHECK: myShaclVue.data.graph changed inside instanceselecteditor")
         getInstanceItems()
     }, { deep: true });
 
@@ -251,18 +257,45 @@
     // Functions //
     // --------- //
 
+    function handleDropdownClick() {
+        // TODO: what should the correct default value be here?
+        // propClass.value = props.property_shape[SHACL.class.value] ?? false
+
+        // console.log("---\nBeforemount instanceselecteditor\n---")
+        // console.log(`propClass.value: ${propClass.value}`)
+        getInstanceItems()
+    }
+
     function selectItem(item) {
         triple_object.value = item.value;
         fieldRef.value.blur();
     }
 
     function handleAddItemClick(item) {
+
+        console.log("xxxxxx")
         selectedShapeIRI.value = item.value
-        menu.value = false;
+        console.log(`selectedShapeIRI.value: ${selectedShapeIRI.value}`)
+        // menu.value = false;
         newNodeIdx.value = '_:' + crypto.randomUUID()
-        add_empty_node(item.value, newNodeIdx.value)
-        dialog.value = true;
+        // open formEditor dialog asynchronously
+        nextTick(() => {
+            dialog.value = true;
+        });
+        myShaclVue.forms.add_node(item.value, newNodeIdx.value)
+        console.log(`myShaclVue.forms.content:`)
+        console.log(myShaclVue.forms.content)
+        
     }
+
+    watch(dialog, (newVal) => {
+        console.log(`**** Dialog state changed: ${newVal}`);
+    });
+
+    watch([selectedShapeIRI, newNodeIdx], ([newIRI, newIdx]) => {
+        console.log(`selectedShapeIRI changed to: ${newIRI}`);
+        console.log(`newNodeIdx changed to: ${newIdx}`);
+    });
 
 </script>
 
@@ -272,11 +305,11 @@
     import { SHACL } from '@/modules/namespaces'
     export const matchingLogic = (shape) => {
         // sh:nodeKind exists
-        if ( shape.hasOwnProperty(SHACL.nodeKind.value) ) {
-            // sh:nodeKind == sh:IRI ||
-            // sh:nodeKind == sh:BlankNodeOrIRI ||
-            return [SHACL.IRI.value, SHACL.BlankNodeOrIRI.value].includes(shape[SHACL.nodeKind.value])
-        }
+        // if ( shape.hasOwnProperty(SHACL.nodeKind.value) ) {
+        //     // sh:nodeKind == sh:IRI ||
+        //     // sh:nodeKind == sh:BlankNodeOrIRI ||
+        //     return [SHACL.IRI.value, SHACL.BlankNodeOrIRI.value].includes(shape[SHACL.nodeKind.value])
+        // }
         return false
     };
 </script>

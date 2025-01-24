@@ -19,7 +19,6 @@ export async function readRDF(file_url, headers = { "Content-Type": "text/turtle
             headers: headers
         }
     )
-    console.log(res.headers)
     // Handle cases where the server returns generic 'text/plain' or 'text/html' content type
     if (['text/plain', 'text/html'].indexOf(res.headers.get('content-type')) >= 0) {
         // default to turtle

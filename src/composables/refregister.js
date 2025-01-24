@@ -12,7 +12,8 @@ export function useRegisterRef(id, props) {
   const fieldRef = ref(null);
   const registerRef = inject('registerRef', null);
   const unregisterRef = inject('unregisterRef', null);
-  const shapePrefixes = inject('shapePrefixes');
+  const myShaclVue = inject('myShaclVue')
+  const shapePrefixes = myShaclVue.shapes.prefixes;
 
   onMounted(() => {
     if (registerRef && fieldRef.value) {

@@ -8,37 +8,37 @@
                         direction="vertical"
                         bg-color="#41b883"
                         color="deep-purple-accent-4">
-                        <v-tab :value="data1">Browse data</v-tab>    
-                        <v-tab :value="data2">View RDF</v-tab>
-                        <v-tab :value="data3" @click="selectViz">View Graph</v-tab>
-                        <v-tab :value="data4">Add data</v-tab>
+                        <v-tab :value="1">Browse data</v-tab>    
+                        <v-tab :value="2">View RDF</v-tab>
+                        <v-tab :value="3" @click="selectViz">View Graph</v-tab>
+                        <v-tab :value="4">Add data</v-tab>
 
                     </v-tabs>
                     <v-tabs-window v-model="datadatatab" style="width: 100%;">
                         
                         <!-- BROWSE DATA -->
-                        <v-tabs-window-item :key="data1" :value="data1">
+                        <v-tabs-window-item :key="1" :value="1">
                             <v-sheet d-flex d-flex-grow class="pa-4 ml-2" border rounded style="width: 100%;">
                                 <!-- <v-btn text="Download samples.tsv" @click="serializeNodesToTSV"></v-btn> -->
-                                <v-select v-model="selectedFormItem" v-if="prefixes_ready" :items="nodeShapeNamesArray" item-title="name" label="Select" density="compact" style="width: 100%;">
+                                <v-select v-model="selectedFormItem" v-if="myShaclVue.ready" :items="myShaclVue.shapes.nodeShapeNamesArray.value" item-title="name" label="Select" density="compact" style="width: 100%;">
                                     <template v-slot:item="{ props, item }">
-                                    <v-list-item v-bind="props" :title="toCURIE(nodeShapeNames[item.raw], shapePrefixes)" @click="selectIRI(nodeShapeNames[item.raw])"></v-list-item>
+                                    <v-list-item v-bind="props" :title="toCURIE(myShaclVue.shapes.nodeShapeNames.value[item.raw], myShaclVue.shapes.prefixes)" @click="selectIRI(myShaclVue.shapes.nodeShapeNames.value[item.raw])"></v-list-item>
                                     </template>
 
                                 </v-select>
 
                                 <v-card v-for="r in instanceItems" class="mb-4">
                                     <v-card-title>{{ r.title }}</v-card-title>
-                                    <v-card-subtitle>{{ toCURIE(r.props.subtitle, allPrefixes) }}</v-card-subtitle>
+                                    <v-card-subtitle>{{ toCURIE(r.props.subtitle, myShaclVue.prefixes) }}</v-card-subtitle>
                                     <v-card-text>
                                     <strong>Properties</strong><br>
                                     <span v-for="(v, k, index) in r.props">
                                         <span v-if="k == 'subtitle' || k == 'quad'"></span>
                                         <span v-else-if="v.length == 1">
-                                            &nbsp;&nbsp; <em>{{ toCURIE(k, allPrefixes) }}</em>: {{ v[0] }} <br>
+                                            &nbsp;&nbsp; <em>{{ toCURIE(k, myShaclVue.prefixes) }}</em>: {{ v[0] }} <br>
                                         </span>
                                         <span v-else>
-                                            &nbsp;&nbsp; <em>{{ toCURIE(k, allPrefixes) }}</em>: <br>
+                                            &nbsp;&nbsp; <em>{{ toCURIE(k, myShaclVue.prefixes) }}</em>: <br>
                                             <span v-for="el in v">
                                                 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {{ el }} <br>
                                             </span>
@@ -61,20 +61,20 @@
                         </v-tabs-window-item>
 
                         <!-- VIEW RDF -->
-                        <v-tabs-window-item :key="data2" :value="data2">
+                        <v-tabs-window-item :key="2" :value="2">
                             <v-sheet class="pa-4 ml-2" border rounded elevation="2">
                                 <v-row align="start" no-gutters>
                                     <v-btn text="Export to TTL" @click="exportGraphData()"></v-btn>
                                 </v-row>
                                 <br>
                                 <pre class="formatted-pre">
-                                    <code class="formatted-code">{{ serializedGraphData }}</code>
+                                    <code class="formatted-code">{{ myShaclVue.data.serializedGraph }}</code>
                                 </pre>
                             </v-sheet>
                         </v-tabs-window-item>
 
                         <!-- VIEW GRAPH -->
-                        <v-tabs-window-item :key="data3" :value="data3">
+                        <v-tabs-window-item :key="3" :value="3">
                             <v-sheet class="pa-4 ml-2" border rounded elevation="2">
                                 <div ref="cyContainer" style="width: 100%; height: 500px;"></div>
                             </v-sheet>
@@ -82,7 +82,7 @@
                         </v-tabs-window-item>
 
                         <!-- ADD DATA -->
-                        <v-tabs-window-item :key="data4" :value="data4">
+                        <v-tabs-window-item :key="4" :value="4">
                             <v-sheet class="pa-4 ml-2" border rounded elevation="2">
                             <h3>Add data</h3>
                             <v-row align="start" no-gutters>
@@ -126,10 +126,8 @@
 
     </v-card>
 
-    <v-dialog v-model="editDialog" max-width="700">
-        <template v-slot:default="{ isActive }">
-            <FormEditor :key="editShapeIRI" :shape_iri="editShapeIRI" :node_idx="editNodeIdx"></FormEditor>
-        </template>
+    <v-dialog v-model="editDialog" max-width="700" scrollable max-height="800">
+        <FormEditor :key="editShapeIRI" :shape_iri="editShapeIRI" :node_idx="editNodeIdx"></FormEditor>
     </v-dialog>
 
 
@@ -138,53 +136,33 @@
 
 
 <script setup>
-    import { ref, computed, provide, inject, watch, reactive, toRaw, nextTick, onBeforeUpdate } from 'vue'
+    import { ref, computed, provide, inject, watch, reactive, toRaw, nextTick, onBeforeUpdate, onMounted} from 'vue'
     import rdf from 'rdf-ext';
     import cytoscape from 'cytoscape';
     import fetch from '@rdfjs/fetch-lite'
     import N3 from 'n3';
-    import { toCURIE, getLiteralAndNamedNodes, getSubjectTriples, toIRI, dlTTL} from '../modules/utils';
+    import { toCURIE, toIRI, dlTTL} from '../modules/utils';
     import {SHACL, RDF, RDFS, DLTHING, XSD} from '@/modules/namespaces'
 
 
-    const batchMode = inject('batchMode');
-    const getGraphData = inject('getGraphData');
-    const triggerReactivity = inject('triggerReactivity');
-    const updateSerializedData = inject('updateSerializedData');
-    const graphData = inject('graphData');
-    const formData = inject('formData');
-    const classData = inject('classData');
-    const serializedGraphData = inject('serializedGraphData');
-    const serializeNodesToTSV = inject('serializeNodesToTSV')
+    const myShaclVue = inject('myShaclVue');    
     const public_url = ref('')
     const upload_url = ref(null)
     const datatab = ref(1)
-    const datadatatab = ref("data2")
+    const datadatatab = ref(2)
     const cyContainer = ref(null);
-    const quadsToFormData = inject('quadsToFormData')
-
-    const shapePrefixes = inject('shapePrefixes')
-    const nodeShapes = inject('nodeShapes')
-    const nodeShapeNamesArray = inject('nodeShapeNamesArray')
-    const nodeShapeNames = inject('nodeShapeNames')
-    const prefixes_ready = inject('prefixes_ready')
-    const graphPrefixes = inject('graphPrefixes')
-    const allPrefixes = reactive({});
-    const classPrefixes = inject('classPrefixes');
+    
     const viz_viewed = ref(false)
-    provide('allPrefixes', allPrefixes)
-
     var selectedIRI = ref(null)
     var selectedShape = ref(null)
     var selectedFormItem = ref(null)
-
     const editDialog = ref(false)
     const editShapeIRI = ref(null)
     const editNodeIdx = ref(null)
     const editMode = inject('editMode')
+    const config = inject('config')
 
     const quadArray = ref([])
-
     const instanceItems = ref([])
 
     function cancelFormHandler() {
@@ -208,18 +186,23 @@
         }
     })
 
-    watch(prefixes_ready, (newValue) => {
-        // console.log("CHECK: prefixesready")
-        if (newValue) {
-            // Get all prefixes and derive context from it
-            Object.assign(allPrefixes, shapePrefixes, graphPrefixes, classPrefixes)
-            const context = toRaw(allPrefixes)
-            // Map graph dataset to an array
-            graphData.forEach(quad => {
-                quadArray.value.push(quad)
-            });
-        }
-    }, {immediate: true });
+    // onMounted( () => {
+    //     if (myShaclVue.ready) {
+    //         // Map graph dataset to an array
+    //         myShaclVue.data.graph.forEach(quad => {
+    //             quadArray.value.push(quad)
+    //         });
+    //     }
+    // })
+
+    // watch(myShaclVue.ready, (newValue) => {
+    //     if (newValue) {
+    //         // Map graph dataset to an array
+    //         myShaclVue.data.graph.forEach(quad => {
+    //             quadArray.value.push(quad)
+    //         });
+    //     }
+    // }, {immediate: true });
 
     // async function exportGraphData() {
     //     console.log("exporting ttl")
@@ -231,7 +214,7 @@
     // }
 
     function exportGraphData() {
-        const writer = new N3.Writer({ prefixes: toRaw(allPrefixes) }); // Create a writer which uses `c` as a prefix for the namespace `http://example.org/cartoons#`
+        const writer = new N3.Writer({ prefixes: toRaw(myShaclVue.prefixes) }); // Create a writer which uses `c` as a prefix for the namespace `http://example.org/cartoons#`
         graphData.forEach(quad => {
             writer.addQuad(quad)
         });
@@ -243,6 +226,7 @@
     
     
     function editNode(instance) {
+        console.time('editNode');        
         // When user selects to edit, it will be either a namedNode or blankNode
         // and the related information would already be in the graph as triples
         // Also, related information might already be in formData if the user
@@ -253,30 +237,31 @@
         if (objectTerm.termType === "NamedNode") {
             editShapeIRI.value = objectTerm.value
         } else {
-            editShapeIRI.value = toIRI(objectTerm.value, allPrefixes)
+            editShapeIRI.value = toIRI(objectTerm.value, myShaclVue.prefixes)
         }
         editNodeIdx.value = instance.value
         // console.log(subjectTerm)
         // if the node is already in the formData, edit that
-        if (formData[editShapeIRI.value]?.[editNodeIdx.value]) {
+        if (myShaclVue.forms.content[editShapeIRI.value]?.[editNodeIdx.value]) {
             editMode.form = true
             editMode.graph = false
-            // open formEditor
-            editDialog.value = true
         } else {
             // If not, we need to create the formData entries from quads in the dataset
-            quadsToFormData(editShapeIRI.value, subjectTerm, graphData)
+            myShaclVue.forms.quadsToFormData(editShapeIRI.value, subjectTerm, myShaclVue.data, config.id_iri)
             editMode.form = false
             editMode.graph = true
-            // open formEditor
-            editDialog.value = true
         }
+        // open formEditor dialog asynchronously
+        nextTick(() => {
+            editDialog.value = true;
+        });
+        console.timeEnd('editNode');
     }
 
 
     function selectIRI(IRI) {
         selectedIRI.value = IRI
-        selectedShape.value = nodeShapes.value[IRI]
+        selectedShape.value = myShaclVue.shapes.nodeShapes.value[IRI]
         // console.log(IRI)
         instanceItems.value = getInstanceItems()
     }
@@ -287,17 +272,16 @@
         // The goal of this method is to populate the list of data objects of the selected type
         // ---
         // find nodes with predicate rdf:type and object being selected class
-        var quads = getLiteralAndNamedNodes(
-            graphData,
+        var quads = myShaclVue.data.getLiteralAndNamedNodes(
             rdf.namedNode(RDF.type),
             selectedIRI.value,
-            allPrefixes
+            myShaclVue.prefixes
         )
         // then find nodes with predicate rdfs:subClassOf and object being the property class
         // TODO: here we are only using a named node for the object because this is how the
         // tools/gen_owl_minimal.py script outputs the triples in the ttl file. This should be
         // generalised
-        const subClasses = rdf.grapoi({ dataset: classData })
+        const subClasses = rdf.grapoi({ dataset: myShaclVue.classes.graph })
             .hasOut(rdf.namedNode(RDFS.subClassOf.value), rdf.namedNode(selectedIRI.value))
             .quads();
         // For each subclass, find the quads in graphData that has the class name as object
@@ -307,7 +291,7 @@
             const cl = quad.subject.value
             // console.log(`\t - getting quads with class: ${cl}`)
             // console.log(`\t - (size of data graph: ${graphData.size})`)
-            myArr = myArr.concat(getLiteralAndNamedNodes(graphData, rdf.namedNode(RDF.type), cl, allPrefixes))
+            myArr = myArr.concat(myShaclVue.data.getLiteralAndNamedNodes(rdf.namedNode(RDF.type), cl, myShaclVue.prefixes))
         });
         // Then combine all quad arrays
         // const combinedQuads = quads.concat(savedQuads).concat(myArr);
@@ -319,7 +303,7 @@
             if (quad.subject.termType === 'BlankNode') {
                 extra = ' (BlankNode)'
             }
-            var relatedTrips = getSubjectTriples(graphData, quad.subject)
+            var relatedTrips = myShaclVue.data.getSubjectTriples(quad.subject)
             var item = {
                 title: quad.subject.value + extra,
                 value: quad.subject.value,
@@ -346,7 +330,7 @@
         const file = upload_url.value
         const reader = new FileReader();
 
-        batchMode.value = true
+        myShaclVue.data.batchMode.value = true
         const parser = new N3.Parser();
         // const parser_options = {
         //     // onQuad (required) accepts a listener of type (quad: RDF.Quad) => void
@@ -360,13 +344,13 @@
         const parserfunc = (error, quad, prefixes) => {
             if (quad) {
                 console.log(quad);
-                graphData.add(quad)
+                myShaclVue.data.graph.add(quad)
             }
             else {
                 console.log("# That's all, folks!", prefixes);
-                updateSerializedData();
-                triggerReactivity();
-                batchMode.value = false;
+                myShaclVue.data.onDataEndFn();
+                myShaclVue.data.triggerReactivity();
+                myShaclVue.data.batchMode.value = false;
             }
         }
 
@@ -485,7 +469,7 @@
         const elements = [];
         const nodeIds = new Set();  // Track unique nodes
 
-        graphData.forEach(quad => {
+        myShaclVue.data.graph.forEach(quad => {
             const subjectId = quad.subject.value;
             const objectId = quad.object.value;
             const predicateLabel = quad.predicate.value;

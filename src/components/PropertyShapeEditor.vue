@@ -30,7 +30,7 @@
                                 rounded="0"
                                 elevation="1"
                                 icon="mdi-delete-outline"
-                                @click="remove_triple(localNodeUid, props.node_idx, my_uid, triple_idx)"
+                                @click="myShaclVue.forms.remove_triple(localNodeUid, props.node_idx, my_uid, triple_idx)"
                                 density="comfortable"
                             ></v-btn>
                             &nbsp;
@@ -39,7 +39,7 @@
                                 rounded="0"
                                 elevation="1"
                                 icon="mdi-plus-circle-outline"
-                                @click="add_empty_triple(localNodeUid, props.node_idx, my_uid)"
+                                @click="myShaclVue.forms.add_empty_triple(localNodeUid, props.node_idx, my_uid)"
                                 density="comfortable"
                             ></v-btn>
                     </v-col>
@@ -71,15 +71,14 @@
 
     const my_uid = ref('');
     const localNodeUid = ref(props.node_uid)
-
-    const add_empty_triple = inject('add_empty_triple');
     const editMode = inject('editMode');
-    const remove_triple = inject('remove_triple');
-    const shapePrefixes = inject('shapePrefixes');
+    const show_all_fields = inject('show_all_fields');
+    const myShaclVue = inject('myShaclVue')
+    const formData = myShaclVue.forms.content;
+    const shapePrefixes = myShaclVue.shapes.prefixes;
     const editorMatchers = inject('editorMatchers');
     const defaultEditor = inject('defaultEditor');
-    const formData = inject('formData');
-    const show_all_fields = inject('show_all_fields');
+    
     const { isRequired } = useRules(props.property_shape)
 
     // ----------------- //
@@ -92,7 +91,7 @@
             // don't add another empty element
             if (formData[localNodeUid.value][props.node_idx][my_uid.value]) return;
         }
-        add_empty_triple(localNodeUid.value, props.node_idx, my_uid.value)
+        myShaclVue.forms.add_empty_triple(localNodeUid.value, props.node_idx, my_uid.value)
     })
 
     onBeforeMount(() => {

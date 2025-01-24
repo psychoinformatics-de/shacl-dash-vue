@@ -11,7 +11,7 @@
 //   } 
 // }
 
-import { reactive, ref, computed, inject, toRaw} from 'vue'
+import { reactive, toRaw} from 'vue'
 import rdf from 'rdf-ext';
 import { DLTHING, SHACL, RDF } from '@/modules/namespaces';
 import { isEmptyObject, getSubjectTriples, getObjectTriples } from '@/modules/utils';
